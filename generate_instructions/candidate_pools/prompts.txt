@@ -1,0 +1,40 @@
+################# generate backgrounds ####################
+
+
+Please generate 30 realistic and visually distinctive background scenarios for use with an image generation model. Each background should be:
+
+Clearly described using concise, concrete language that is easy for a language model to understand and interpret.
+
+Visually varied, covering a wide range of environments (e.g., indoor, outdoor, natural, man-made, etc.).
+
+Realistic only — no fantasy, surreal, or imaginary elements.
+
+Free from specific location or city names (e.g., avoid "Paris street", "European city view", or similar).
+
+The goal is to create prompts that lead to easily recognizable, well-defined backgrounds that image generation models can reproduce consistently and language models can describe or detect reliably.
+
+
+
+############# generate texts ###############
+I want to generate a batch of 100 short, expressive text phrases for use as overlays on images (e.g., greeting cards, banners, social media posts).
+The requirements are:
+
+Exactly 50 English phrases:
+
+Each phrase should contain no more than 2 words
+
+Should be emotionally expressive or occasion-based (e.g., greetings, celebrations, encouragement)
+
+Exactly 50 Chinese phrases:
+
+Each phrase should be no more than 4 characters
+
+Should be natural and commonly used for greetings, blessings, or emotional expression
+
+All phrases should be:
+
+Visually suitable for placement on images
+
+Concise and readable
+
+Diverse in tone: celebratory, motivational, friendly, seasonal, etc.

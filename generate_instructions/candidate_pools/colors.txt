@@ -1,0 +1,15 @@
+black  
+white  
+blue  
+green  
+red  
+yellow  
+orange  
+purple  
+pink  
+brown  
+gray  
+teal  
+peach  
+gold  
+navy  
