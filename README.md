@@ -3,6 +3,8 @@
   EdiVal-Agent: An Object-Centric Framework for Automated, Fine-Grained Evaluation of Multi-Turn Editing
 </h2>
 
+> Want to run EdiVal-Agent on your own images? Jump to the [Bring Your Own Images](#bring-your-own-images) section for a step-by-step walkthrough.
+
 <!--- BADGES: START --->
 [![GitHub license](https://img.shields.io/badge/License-MIT-green.svg?logo=github)](https://lbesson.mit-license.org/)
 [![GitHub license](https://img.shields.io/badge/License-CC--BY--SA--4.0-green.svg?logo=github)](https://creativecommons.org/licenses/by-sa/4.0/)
@@ -30,6 +32,7 @@ Welcome to the official repository for **EdiVal-Agent: An Object-Centric Framewo
 - [Image Generation](#image-generation)
 - [Evaluation](#evaluation)
 - [Analysis \& Reproduction](#analysis--reproduction)
+- [Bring Your Own Images](#bring-your-own-images)
 - [Citation](#citation)
 - [Support \& Updates](#support--updates)
 </details>
@@ -210,6 +213,36 @@ python generate.py --editor-class my_module:MyCustomGenerator ...
 - `example_evaluate_results/` – Reference outputs to verify your setup.
 
 Launch Jupyter or VS Code within the `edival` environment to explore the results interactively.
+
+---
+
+## Bring Your Own Images
+
+Want to evaluate your own dataset? Follow the same three-stage pipeline used for EdiVal's release.
+
+1. **Prepare Inputs**
+   - Collect/source your raw images (ideally resized to 512×512 for parity with the benchmark).
+   - Place the ZIP (or directory) alongside the existing `input_images_resize_512.zip` or point the scripts to your custom location via CLI flags.
+
+2. **Generate Instructions**
+   - Run `generate_instructions/oai_all_objects.py` to extract object metadata for every image.
+   - Filter the results with `generate_instructions/grounding_filter.py` to keep grounded objects.
+   - Export multi-turn instructions using `generate_instructions/oai_instruction_generator.py`, targeting a new CSV (e.g. `my_dataset_instructions.csv`).
+
+3. **Run Editors**
+   - Use `generate.py` (or your own editor runner) to create multipass/singlepass generations from the new instruction CSV.
+   - Custom editors can be plugged in via `--editor-class` if you want to benchmark alternative diffusion or autoregressive systems.
+
+4. **Evaluate**
+   - Invoke `eval.py --generation_folder <path>` (and optionally `eval_bash.sh` for batch jobs) to produce instruction-following, consistency, and quality metrics.
+   - If desired, run `update_hps_scores.py` to backfill HPSv3 scores.
+   - Feed the outputs into `analysis.ipynb` to generate the same tables/figures used in the paper.
+
+That's it—by mirroring the release pipeline you can obtain apples-to-apples results for any custom image collection.
+
+---
+
+
 
 ---
 
