@@ -251,7 +251,7 @@ That's it—by mirroring the release pipeline you can obtain apples-to-apples re
 ```
 @article{ediValAgent2025,
   title   = {EdiVal-Agent: An Object-Centric Framework for Automated, Fine-Grained Evaluation of Multi-Turn Editing},
-  author  = {Tianyu Chen and collaborators},
+  author={Tianyu Chen and Yasi Zhang and Zhi Zhang and Peiyu Yu and Shu Wang and Zhendong Wang and Kevin Lin and Xiaofei Wang and Zhengyuan Yang and Linjie Li and Chung-Ching Lin and Jianwen Xie and Oscar Leong and Lijuan Wang and Ying Nian Wu and Mingyuan Zhou},
   journal = {arXiv preprint arXiv:2509.13399},
   year    = {2025}
 }
