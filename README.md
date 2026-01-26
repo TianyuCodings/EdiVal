@@ -1,6 +1,6 @@
 <img src="assets/logo.png" alt="EdiVal-Agent Logo" width="600"/>
 <h2 style="font-weight: bold; margin-top: 11px;">
-  EdiVal-Agent: An Object-Centric Framework for Automated, Fine-Grained Evaluation of Multi-Turn Editing
+ [ICLR 2026] EdiVal-Agent: An Object-Centric Framework for Automated, Fine-Grained Evaluation of Multi-Turn Editing
 </h2>
 
 > Want to run EdiVal-Agent on your own images? Jump to the [Bring Your Own Images](#bring-your-own-images) section for a step-by-step walkthrough.
