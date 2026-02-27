@@ -1,60 +1,114 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
 
-# Portable setup script that bootstraps the `edival` conda environment from env.yaml,
-# installs Grounding DINO locally, and fetches the default weights.
+# Unified setup script for vLLM and Grounding DINO
+# This script addresses common dependency conflicts between the two libraries
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-ENV_FILE="${SCRIPT_DIR}/env.yaml"
-ENV_NAME="edival"
+sudo apt install libgl1
+set -e
 
-if ! command -v conda >/dev/null 2>&1; then
-  echo "Conda was not found on PATH. Install Miniconda or Mambaforge first." >&2
-  exit 1
+echo "=== Unified vLLM + Grounding DINO Setup ==="
+echo "This script will install both libraries in a compatible environment"
+
+# Create fresh environment
+conda create -n edival python=3.10 -y
+source activate edival
+
+# Set CUDA environment variables
+CUDA_PATH=/usr/local/cuda-12.1
+if [ -n "$CUDA_PATH" ]; then
+    export CUDA_HOME="$CUDA_PATH"
+    echo "Found CUDA at: $CUDA_HOME"
+fi
+echo 'export CUDA_HOME=/usr/local/cuda-12.1' >> ~/.bashrc 
+source ~/.bashrc
+source activate edival
+
+echo "=== Installing Base PyTorch (Compatible Version) ==="
+# Use PyTorch 2.4.1 which is more stable for both libraries
+pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
+
+echo "=== Installing vLLM Dependencies First ==="
+# Install vLLM-specific dependencies that might conflict
+pip install transformers==4.45.2  # Pin to avoid conflicts
+pip install tokenizers==0.19.1
+pip install accelerate==0.34.2
+pip install pydantic==2.8.2  # Specific version to avoid conflicts
+pip install tabulate
+
+# Install other vLLM dependencies
+pip install fastapi
+pip install uvicorn
+pip install openai
+pip install datasets
+pip install ray>=2.9
+
+# echo "=== Installing vLLM ==="
+# # Install vLLM with specific flags to avoid build issues
+# VLLM_VERSION=0.6.1  # Use a stable version
+# pip install vllm==$VLLM_VERSION --no-build-isolation
+
+
+echo "=== Installing Grounding DINO Dependencies ==="
+# Install dependencies that are compatible with vLLM
+pip install opencv-python==4.8.1.78
+pip install pillow==10.0.1
+pip install matplotlib
+pip install scipy
+pip install scikit-image
+pip install gdown
+
+# Install supervision with specific version to avoid conflicts
+pip install supervision==0.22.0
+
+# Install other Grounding DINO requirements
+pip install addict
+pip install yapf
+pip install timm==0.9.16  # Pin timm version for stability
+pip install pycocotools
+
+echo "=== Setting Up Grounding DINO ==="
+cd "$(dirname "$0")/.."
+
+# Clone or navigate to GroundingDINO
+if [ ! -d "GroundingDINO" ]; then
+    echo "Cloning GroundingDINO repository..."
+    git clone https://github.com/IDEA-Research/GroundingDINO.git
 fi
 
-if [ ! -f "${ENV_FILE}" ]; then
-  echo "Environment file not found at ${ENV_FILE}" >&2
-  exit 1
+# # Modify requirements.txt to avoid conflicts
+# echo "=== Modifying GroundingDINO requirements for compatibility ==="
+# cat > requirements_modified.txt << 'EOF'
+# torch>=2.0.0
+# torchvision>=0.15.0
+# transformers>=4.21.0
+# addict
+# yapf
+# timm>=0.6.7
+# numpy
+# opencv-python
+# supervision>=0.22.0
+# pycocotools
+# EOF
+
+# Install Grounding DINO with modified requirements
+echo "Installing Grounding DINO with compatibility fixes..."
+python -m pip install -e ./GroundingDINO --no-build-isolation --config-settings editable_mode=compat
+pip install vllm==0.8.4
+
+echo "=== Downloading Pre-trained Weights ==="
+cd GroundingDINO
+mkdir -p weights
+cd weights
+if [ ! -f "groundingdino_swint_ogc.pth" ]; then
+    wget -q https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth
 fi
 
-echo ">>> Creating or updating conda environment '${ENV_NAME}' from ${ENV_FILE}"
-if conda env list | awk '{print $1}' | grep -Fx "${ENV_NAME}" >/dev/null 2>&1; then
-  echo "Environment '${ENV_NAME}' already exists. Updating packages to match env.yaml."
-  conda env update -n "${ENV_NAME}" -f "${ENV_FILE}" --prune
-else
-  conda env create -f "${ENV_FILE}"
-fi
-
-echo ">>> Upgrading pip inside '${ENV_NAME}'"
-conda run -n "${ENV_NAME}" python -m pip install --upgrade pip
-
-echo ">>> Installing GroundingDINO in editable mode"
-conda run -n "${ENV_NAME}" python -m pip install -e "${REPO_ROOT}/GroundingDINO" --config-settings editable_mode=compat
-
-echo ">>> Ensuring Grounding DINO weights are present"
-export EDIVAL_REPO_ROOT="${REPO_ROOT}"
-conda run -n "${ENV_NAME}" python - <<'PY'
-import os
-import pathlib
-import urllib.request
-
-repo_root = pathlib.Path(os.environ["EDIVAL_REPO_ROOT"])
-weights_dir = repo_root / "GroundingDINO" / "weights"
-weights_dir.mkdir(parents=True, exist_ok=True)
-weights_path = weights_dir / "groundingdino_swint_ogc.pth"
-if weights_path.exists():
-    print(f"Weight file already exists at {weights_path}")
-else:
-    url = "https://github.com/IDEA-Research/GroundingDINO/releases/download/v0.1.0-alpha/groundingdino_swint_ogc.pth"
-    print(f"Downloading {url} -> {weights_path}")
-    urllib.request.urlretrieve(url, weights_path)
-PY
-unset EDIVAL_REPO_ROOT
-
-cat <<'MSG'
-------------------------------------------------------------
-Environment bootstrap complete.
-Activate it with:   conda activate edival
-MSG
+cd ../../
+pip install diffusers
+pip install opencv-python
+pip install tabulate
+pip install hpsv3
+pip install tensorboard
+#pip install transformers==4.51.1 #works for hpsv3
+pip install git+https://github.com/huggingface/transformers.git # update transformer for dinov3
+#pip install tensorflows
