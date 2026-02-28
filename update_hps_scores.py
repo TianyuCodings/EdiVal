@@ -246,9 +246,107 @@ def _chunk_list(lst: List[Path], n: int) -> List[List[Path]]:
     return [lst[i::n] for i in range(n)]
 
 
+def _aggregate_hps_to_task_rate(results_root: Path, dry_run: bool = False):
+    """Re-aggregate human_preference_score from per-sample JSONs into task_rate.json.
+
+    Handles both multipass (``{idx}_input_raw.json`` with turn keys "1","2",…)
+    and singlepass (``{idx}_input_raw_turn_{t}.json`` with a top-level key).
+    """
+    import re
+
+    for mode_folder in sorted(results_root.iterdir()):
+        if not mode_folder.is_dir():
+            continue
+        mode = mode_folder.name  # e.g. "multipass" or "singlepass"
+        task_rate_path = mode_folder / "task_rate.json"
+        if not task_rate_path.exists():
+            continue
+
+        with open(task_rate_path, "r") as f:
+            task_rate = json.load(f)
+
+        # Determine which turns exist in task_rate (numeric string keys)
+        turn_keys = sorted(k for k in task_rate if k.isdigit())
+        if not turn_keys:
+            continue
+
+        if mode == "multipass":
+            # Discover per-sample JSONs: {index}_input_raw.json
+            pat = re.compile(r"^(\d+)_input_raw\.json$")
+            index_to_file: Dict[int, Path] = {}
+            for p in mode_folder.iterdir():
+                m = pat.match(p.name)
+                if m:
+                    index_to_file[int(m.group(1))] = p
+
+            sorted_indices = sorted(index_to_file.keys())
+            updated = False
+            for tk in turn_keys:
+                scores: List[Optional[float]] = []
+                for idx in sorted_indices:
+                    try:
+                        with open(index_to_file[idx], "r") as f:
+                            data = json.load(f)
+                        hps = data.get(tk, {}).get("human_preference_score")
+                    except Exception:
+                        hps = None
+                    if isinstance(hps, (int, float)):
+                        scores.append(float(hps))
+
+                if scores:
+                    task_rate[tk]["human_preference_score"] = scores
+                    updated = True
+
+            if updated and not dry_run:
+                with open(task_rate_path, "w") as f:
+                    json.dump(task_rate, f, indent=2)
+                print(f"[aggregate] Updated task_rate.json in {mode_folder} "
+                      f"({len(sorted_indices)} images, turns {turn_keys})")
+            elif updated:
+                print(f"[aggregate][dry_run] Would update task_rate.json in {mode_folder}")
+
+        elif mode == "singlepass":
+            # Discover per-turn JSONs: {index}_input_raw_turn_{turn}.json
+            pat = re.compile(r"^(\d+)_input_raw_turn_(\d+)\.json$")
+            # Collect all (index, turn) pairs
+            entries: Dict[str, Dict[int, Path]] = {tk: {} for tk in turn_keys}
+            for p in mode_folder.iterdir():
+                m = pat.match(p.name)
+                if m:
+                    idx, t = int(m.group(1)), m.group(2)
+                    if t in entries:
+                        entries[t][idx] = p
+
+            updated = False
+            for tk in turn_keys:
+                sorted_indices = sorted(entries[tk].keys())
+                scores: List[Optional[float]] = []
+                for idx in sorted_indices:
+                    try:
+                        with open(entries[tk][idx], "r") as f:
+                            data = json.load(f)
+                        hps = data.get("human_preference_score")
+                    except Exception:
+                        hps = None
+                    if isinstance(hps, (int, float)):
+                        scores.append(float(hps))
+
+                if scores:
+                    task_rate[tk]["human_preference_score"] = scores
+                    updated = True
+
+            if updated and not dry_run:
+                with open(task_rate_path, "w") as f:
+                    json.dump(task_rate, f, indent=2)
+                print(f"[aggregate] Updated task_rate.json in {mode_folder} "
+                      f"(turns {turn_keys})")
+            elif updated:
+                print(f"[aggregate][dry_run] Would update task_rate.json in {mode_folder}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Update human_preference_score using HPSv3 across GPUs")
-    parser.add_argument("--results_root", type=str, default="./evaluate_results/flux_max", help="Root folder with evaluation JSONs")
+    parser.add_argument("--results_root", type=str, default="./evaluate_results/flux2", help="Root folder with evaluation JSONs")
     parser.add_argument("--num_gpus", type=int, default=8, help="Number of GPUs to use")
     parser.add_argument("--batch_size", type=int, default=1, help="Batch size per GPU call")
     parser.add_argument("--dry_run", action="store_true", help="Do not write changes, just simulate")
@@ -292,9 +390,18 @@ def main():
             to_process.append(jp)
 
     if not to_process:
-        print("No files need updates; all HPS fields present.")
-        return
+        print("No individual files need HPS updates; all fields present.")
+    else:
+        _run_hps_workers(to_process, repo_root, args)
 
+    # Always re-aggregate HPS values from per-sample JSONs into task_rate.json
+    print("Aggregating human_preference_score into task_rate.json ...")
+    _aggregate_hps_to_task_rate(results_root, dry_run=args.dry_run)
+    print("Aggregation complete.")
+
+
+def _run_hps_workers(to_process: List[Path], repo_root: Path, args):
+    """Spawn GPU/CPU workers to compute missing HPS values in individual JSONs."""
     # Determine number of GPUs available
     # Determine visible GPU tokens from env if present, else 0..avail-1
     try:
