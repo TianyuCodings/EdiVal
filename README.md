@@ -197,6 +197,8 @@ python generate.py --editor-class my_module:MyCustomGenerator ...
 3. **Fill in HPSv3 (Optional)**
 
    ```bash
+   bash env_setup/setup_hpsv3.sh &&
+   conda activate hps &&
    python update_hps_scores.py \
      --results_root evaluate_results/your_generations \
      --num_gpus 2 \
