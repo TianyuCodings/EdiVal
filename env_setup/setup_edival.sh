@@ -65,6 +65,8 @@ pip install addict
 pip install yapf
 pip install timm==0.9.16  # Pin timm version for stability
 pip install pycocotools
+pip install pandas
+pip install tabulate
 
 echo "=== Setting Up Grounding DINO ==="
 cd "$(dirname "$0")/.."
