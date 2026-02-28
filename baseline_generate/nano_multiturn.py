@@ -67,7 +67,7 @@ def generate():
                         inline_data = part.inline_data
                         image_output = PIL.Image.open(io.BytesIO(inline_data.data))
                         image_output = image_output.resize((512, 512))
-                        save_path = './nano_banana/multipass/' + str(image_idx)+f'_input_raw_turn_{turns}.png'
+                        save_path = '/blob/v-tianyuchen/Projects/jepo/images/nano_banana/multipass/' + str(image_idx)+f'_input_raw_turn_{turns}.png'
                         image_output.save(save_path)
                         print('save_path', save_path)
         except Exception as e:

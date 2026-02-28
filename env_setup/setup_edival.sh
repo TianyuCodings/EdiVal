@@ -6,14 +6,13 @@
 sudo apt install libgl1
 set -e
 
-echo "=== Unified vLLM + Grounding DINO Setup ==="
-echo "This script will install both libraries in a compatible environment"
-
 # Create fresh environment
 conda create -n edival python=3.10 -y
 source activate edival
 
 # Set CUDA environment variables
+# This is for Grounding DINO to use the correct CUDA version. 
+# Please have a look at https://github.com/IDEA-Research/GroundingDINO README for more details if this is not working for you.
 CUDA_PATH=/usr/local/cuda-12.1
 if [ -n "$CUDA_PATH" ]; then
     export CUDA_HOME="$CUDA_PATH"
@@ -23,11 +22,8 @@ echo 'export CUDA_HOME=/usr/local/cuda-12.1' >> ~/.bashrc
 source ~/.bashrc
 source activate edival
 
-echo "=== Installing Base PyTorch (Compatible Version) ==="
-# Use PyTorch 2.4.1 which is more stable for both libraries
-pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 
-echo "=== Installing vLLM Dependencies First ==="
+pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 # Install vLLM-specific dependencies that might conflict
 pip install transformers==4.45.2  # Pin to avoid conflicts
 pip install tokenizers==0.19.1
@@ -41,11 +37,6 @@ pip install uvicorn
 pip install openai
 pip install datasets
 pip install ray>=2.9
-
-# echo "=== Installing vLLM ==="
-# # Install vLLM with specific flags to avoid build issues
-# VLLM_VERSION=0.6.1  # Use a stable version
-# pip install vllm==$VLLM_VERSION --no-build-isolation
 
 
 echo "=== Installing Grounding DINO Dependencies ==="
