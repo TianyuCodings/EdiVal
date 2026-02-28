@@ -15,7 +15,7 @@ set -euo pipefail
 
 BASE_DIR="./baseline_generations"
 JOBS=3
-GPU_GROUPS="0,1 2,3 4,5"
+GPU_GROUPS="0,1,2,3,4,5"
 
 if [ ! -d "$BASE_DIR" ]; then
   echo "Base directory not found: $BASE_DIR" >&2
@@ -79,4 +79,4 @@ fi
 
 echo "All evaluations complete."
 
-CUDA_VISIBLE_DEVICES=0,1 python eval.py --generation_folder "baseline_generations/AnyEdit_generation"
+# CUDA_VISIBLE_DEVICES=0,1 python eval.py --generation_folder "baseline_generations/flux2"
