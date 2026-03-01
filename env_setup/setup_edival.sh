@@ -100,8 +100,5 @@ cd ../../
 pip install diffusers
 pip install opencv-python
 pip install tabulate
-pip install hpsv3
 pip install tensorboard
-#pip install transformers==4.51.1 #works for hpsv3
-pip install git+https://github.com/huggingface/transformers.git # update transformer for dinov3
-#pip install tensorflows
+pip install transformers==4.57.6
